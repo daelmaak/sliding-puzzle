@@ -7,6 +7,8 @@ export class Puzzle {
     this.width = this.puzzle[0].length;
     this.height = this.puzzle.length;
 
+    this.resultMoves = [];
+
     console.info("desired result");
     console.info(this.desiredResult);
   }
@@ -15,13 +17,26 @@ export class Puzzle {
    * @return Coordinate
    */
   findNextUnsorted() {
-    const puzzleFlat = this.puzzle.flatMap(row => row);
-    const desiredPuzzleFlat = this.desiredResult.flatMap(row => row);
+    let puzzleFlat;
+    let desiredPuzzleFlat;
+
+    if (this.height >= this.width) {
+      puzzleFlat = this.puzzle.flatMap(row => row);
+      desiredPuzzleFlat = this.desiredResult.flatMap(row => row);
+    } else {
+      puzzleFlat = [];
+      desiredPuzzleFlat = [];
+
+      // rotating the puzzle by 90deg
+      for (let i = 0; i < this.width; i++) {
+        puzzleFlat.push(...this.puzzle.map(row => row[i]));
+        desiredPuzzleFlat.push(...this.desiredResult.map(row => row[i]));
+      }
+    }
 
     const number = desiredPuzzleFlat.find((n, i) => puzzleFlat[i] != n);
     const nextUnordered = this.getCoordinate(number);
 
-    console.info("start", nextUnordered);
     return nextUnordered;
   }
 
@@ -41,6 +56,14 @@ export class Puzzle {
     }
   }
 
+  /**
+   *
+   * @param rowStart
+   * @param rowEnd
+   * @param colStart
+   * @param colEnd
+   * @return Coordinate[]
+   */
   getCoordinates(
     rowStart,
     rowEnd = rowStart + 1,
@@ -52,6 +75,10 @@ export class Puzzle {
       .flatMap(row =>
         row.slice(colStart, colEnd).map(n => this.getCoordinate(n))
       );
+  }
+
+  getNumber(coordinate) {
+    return this.puzzle[coordinate.y][coordinate.x];
   }
 
   /**
@@ -105,8 +132,6 @@ export class Puzzle {
       targetCoordinate,
       avoidCoordinates
     );
-
-    console.info("path to target", path);
     let nextCoordinate = path.shift();
 
     while (nextCoordinate) {
@@ -137,5 +162,9 @@ export class Puzzle {
       coordinate2.x
     ];
     this.puzzle[coordinate2.y][coordinate2.x] = temp;
+
+    const number1 = this.getNumber(coordinate1);
+    const number2 = this.getNumber(coordinate2);
+    this.resultMoves.push(number1 || number2);
   }
 }

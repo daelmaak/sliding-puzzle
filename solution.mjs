@@ -19,15 +19,16 @@ const desiredResult = [
 
 solvePuzzle(testM);
 
-function solvePuzzle(puzzle) {
-  const desiredResult = getDesiredResult(puzzle);
-  puzzle = new Puzzle(puzzle, desiredResult);
+function solvePuzzle(originalPuzzle) {
+  let desiredResult = getDesiredResult(originalPuzzle);
+  let puzzle = new Puzzle(originalPuzzle, desiredResult);
 
   let nextUnordered = puzzle.findNextUnsorted();
   let nextTarget = puzzle.getCoordinate(
     nextUnordered.number,
     puzzle.desiredResult
   );
+  let coordinatesToAvoid = [];
 
   while (!isInCorner(puzzle, nextTarget)) {
     puzzle.sortOne(nextUnordered);
@@ -39,7 +40,7 @@ function solvePuzzle(puzzle) {
   }
 
   // in the corner now - horizontal
-  let coordinatesToAvoid = puzzle.getCoordinates(0, 1, 0, puzzle.width - 2);
+  coordinatesToAvoid = puzzle.getCoordinates(0, 1, 0, puzzle.width - 2);
 
   nextTarget.x++;
   puzzle.sortOne(nextUnordered, nextTarget, coordinatesToAvoid);
@@ -53,13 +54,31 @@ function solvePuzzle(puzzle) {
   nextUnordered = puzzle.findNextUnsorted();
   puzzle.sortOne(nextUnordered);
   //horizontal DONE!!
+
+  //*************************** VERTICAL ****************************/
+  coordinatesToAvoid = [];
+  desiredResult = getDesiredResult(originalPuzzle, 0, 1);
+  puzzle = new Puzzle(originalPuzzle.slice(1), desiredResult);
+
+  nextUnordered = puzzle.findNextUnsorted();
+  nextTarget = puzzle.getCoordinate(nextUnordered.number, puzzle.desiredResult);
+
+  while (!isInCorner(puzzle, nextTarget)) {
+    puzzle.sortOne(nextUnordered, null, coordinatesToAvoid);
+    coordinatesToAvoid.push(nextTarget);
+    nextUnordered = puzzle.findNextUnsorted();
+    nextTarget = puzzle.getCoordinate(
+      nextUnordered.number,
+      puzzle.desiredResult
+    );
+  }
 }
 
-function getDesiredResult(puzzle) {
+function getDesiredResult(puzzle, xOffset, yOffset) {
   const rowCount = puzzle.length;
   const colCount = puzzle[0].length;
 
-  const desiredResult = Array(rowCount)
+  let desiredResult = Array(rowCount)
     .fill(0)
     .map((_, rowIndex) => {
       var row = Array(colCount)
@@ -68,6 +87,13 @@ function getDesiredResult(puzzle) {
       return row;
     });
   desiredResult[rowCount - 1][colCount - 1] = 0;
+
+  if (yOffset) {
+    desiredResult = desiredResult.slice(yOffset);
+  }
+  if (xOffset) {
+    desiredResult = desiredResult.map(row => row.slice(xOffset));
+  }
 
   return desiredResult;
 }
