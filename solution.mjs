@@ -22,12 +22,20 @@ function solvePuzzle(puzzle) {
   const desiredResult = getDesiredResult(puzzle);
   puzzle = new Puzzle(puzzle, desiredResult);
 
-  const nextUnordered = puzzle.findNextUnordered();
-  console.info("start", nextUnordered);
-  const pathToTarget = puzzle.getPathToTarget(nextUnordered);
-  console.info("path to target", pathToTarget);
-  puzzle.move(nextUnordered, pathToTarget);
-  console.info("after zero moved", puzzle.puzzle);
+  let nextUnordered = puzzle.findNextUnsorted();
+  let nextTarget = puzzle.getCoordinate(
+    nextUnordered.number,
+    puzzle.desiredResult
+  );
+
+  while (!isInCorner(puzzle, nextTarget)) {
+    puzzle.sortOne(nextUnordered);
+    nextUnordered = puzzle.findNextUnsorted();
+    nextTarget = puzzle.getCoordinate(
+      nextUnordered.number,
+      puzzle.desiredResult
+    );
+  }
 }
 
 function getDesiredResult(puzzle) {
@@ -45,4 +53,11 @@ function getDesiredResult(puzzle) {
   desiredResult[rowCount - 1][colCount - 1] = 0;
 
   return desiredResult;
+}
+
+function isInCorner(puzzle, coordinate) {
+  return (
+    puzzle.width - (coordinate.x + 1) < 2 ||
+    puzzle.height - (coordinate.y + 1) < 2
+  );
 }

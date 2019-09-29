@@ -18,6 +18,7 @@ export class Coordinate {
   }
 
   equals(coordinate) {
+    if (!coordinate) return false;
     return coordinate.x == this.x && coordinate.y == this.y;
   }
 }
