@@ -56,37 +56,56 @@ export class Puzzle {
    * @return Coordinate[]
    */
   getPathTo(startCoordinate, targetCoordinate) {
+    // TODO build in coordinate avoidance
     const d = startCoordinate.minus(targetCoordinate);
     const path = [];
     let lastCoordinate = startCoordinate;
 
     while (!targetCoordinate.equals(lastCoordinate)) {
+      const xCandidate =
+        d.deltaX > 0 ? lastCoordinate.x - 1 : lastCoordinate.x + 1;
+      const yCandidate =
+        d.deltaY > 0 ? lastCoordinate.y - 1 : lastCoordinate.y + 1;
+
       if (d.deltaX == 0 && d.deltaY == 0) {
         path.push(targetCoordinate);
       } else if (Math.abs(d.deltaX) > Math.abs(d.deltaY)) {
-        path.push(
-          new Coordinate(
-            d.deltaX > 0 ? lastCoordinate.x - 1 : lastCoordinate.x + 1,
-            lastCoordinate.y
-          )
-        );
+        path.push(new Coordinate(xCandidate, lastCoordinate.y));
         d.deltaX > 0 ? d.deltaX-- : d.deltaX++;
       } else {
-        path.push(
-          new Coordinate(
-            lastCoordinate.x,
-            d.deltaY > 0 ? lastCoordinate.y - 1 : lastCoordinate.y + 1
-          )
-        );
+        path.push(new Coordinate(lastCoordinate.x, yCandidate));
         d.deltaY > 0 ? d.deltaY-- : d.deltaY++;
       }
+
       lastCoordinate = path[path.length - 1];
     }
 
     return path;
   }
 
-  moveAlong(startCoordinate, path) {
-    const zero = this.getCoordinate(0);
+  move(startCoordinate, path) {
+    path = path.slice();
+    let nextCoordinate = path.shift();
+
+    this.moveZero(nextCoordinate);
+  }
+
+  moveZero(targetCoordinate) {
+    const zeroCoordinate = this.getCoordinate(0);
+    const pathToTarget = [zeroCoordinate].concat(
+      this.getPathTo(zeroCoordinate, targetCoordinate)
+    );
+
+    for (let i = 0; i < pathToTarget.length - 1; i++) {
+      this._swap(pathToTarget[i], pathToTarget[i + 1]);
+    }
+  }
+
+  _swap(coordinate1, coordinate2) {
+    let temp = this.puzzle[coordinate1.y][coordinate1.x];
+    this.puzzle[coordinate1.y][coordinate1.x] = this.puzzle[coordinate2.y][
+      coordinate2.x
+    ];
+    this.puzzle[coordinate2.y][coordinate2.x] = temp;
   }
 }

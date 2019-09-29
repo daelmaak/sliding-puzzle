@@ -24,7 +24,10 @@ function solvePuzzle(puzzle) {
 
   const nextUnordered = puzzle.findNextUnordered();
   console.info("start", nextUnordered);
-  console.info("path to target", puzzle.getPathToTarget(nextUnordered));
+  const pathToTarget = puzzle.getPathToTarget(nextUnordered);
+  console.info("path to target", pathToTarget);
+  puzzle.move(nextUnordered, pathToTarget);
+  console.info("after zero moved", puzzle.puzzle);
 }
 
 function getDesiredResult(puzzle) {
