@@ -1,5 +1,6 @@
 import { Puzzle } from "./puzzle.mjs";
 
+let originalPuzzle;
 const testM = [
   [5, 3, 17, 20, 11],
   [21, 16, 10, 6, 1],
@@ -10,9 +11,13 @@ const testM = [
 
 solvePuzzle(testM);
 
-function solvePuzzle(originalPuzzle) {
-  let desiredResult = getDesiredResult(originalPuzzle);
-  let puzzle = new Puzzle(originalPuzzle, desiredResult);
+function solvePuzzle(puzzleMatrix) {
+  if (!originalPuzzle) originalPuzzle = puzzleMatrix;
+
+  if (puzzleMatrix.width == 2 && puzzleMatrix.height == 2) return;
+
+  let desiredResult = getDesiredResult(puzzleMatrix);
+  let puzzle = new Puzzle(puzzleMatrix, desiredResult);
 
   let nextUnordered = puzzle.findNextUnsorted();
   let nextTarget = puzzle.getCoordinate(
@@ -20,39 +25,7 @@ function solvePuzzle(originalPuzzle) {
     puzzle.desiredResult
   );
   let coordinatesToAvoid = [];
-
-  while (!isInCorner(puzzle, nextTarget)) {
-    puzzle.sortOne(nextUnordered);
-    coordinatesToAvoid.push(nextTarget);
-    nextUnordered = puzzle.findNextUnsorted();
-    nextTarget = puzzle.getCoordinate(
-      nextUnordered.number,
-      puzzle.desiredResult
-    );
-  }
-
-  // in the corner now - horizontal
-  coordinatesToAvoid = puzzle.getCoordinates(0, 1, 0, puzzle.width - 2);
-  nextTarget.x++;
-  puzzle.sortOne(nextUnordered, nextTarget, coordinatesToAvoid);
-  coordinatesToAvoid.push(nextTarget.copy());
-  nextUnordered = puzzle.getCoordinate(nextUnordered.number + 1);
-  nextTarget.y++;
-  puzzle.sortOne(nextUnordered, nextTarget, coordinatesToAvoid);
-  // and now rotate to final position
-  nextUnordered = puzzle.findNextUnsorted();
-  puzzle.sortOne(nextUnordered);
-  nextUnordered = puzzle.findNextUnsorted();
-  puzzle.sortOne(nextUnordered);
-  //horizontal DONE!!
-
-  //*************************** VERTICAL ****************************/
-  coordinatesToAvoid = [];
-  desiredResult = getDesiredResult(originalPuzzle, 0, 1);
-  puzzle = new Puzzle(originalPuzzle.slice(1), desiredResult);
-
-  nextUnordered = puzzle.findNextUnsorted();
-  nextTarget = puzzle.getCoordinate(nextUnordered.number, puzzle.desiredResult);
+  const horizontal = puzzle.width <= puzzle.height;
 
   while (!isInCorner(puzzle, nextTarget)) {
     puzzle.sortOne(nextUnordered, null, coordinatesToAvoid);
@@ -64,43 +37,46 @@ function solvePuzzle(originalPuzzle) {
     );
   }
 
-  // in the corner now - vertical
-  coordinatesToAvoid = puzzle.getCoordinates(0, puzzle.height - 2, 0, 1);
-  nextTarget.y++;
+  // in the corner now
+  coordinatesToAvoid = horizontal
+    ? puzzle.getCoordinates(0, 1, 0, puzzle.width - 2)
+    : puzzle.getCoordinates(0, puzzle.height - 2, 0, 1);
+  nextTarget[horizontal ? "x" : "y"]++;
+
   puzzle.sortOne(nextUnordered, nextTarget, coordinatesToAvoid);
   coordinatesToAvoid.push(nextTarget.copy());
-  nextUnordered = puzzle.getCoordinate(nextUnordered.number + puzzle.width);
-  nextTarget.x++;
+  nextUnordered = puzzle.getCoordinate(
+    nextUnordered.number + (horizontal ? 1 : originalPuzzle[0].length)
+  );
+  nextTarget[horizontal ? "y" : "x"]++;
   puzzle.sortOne(nextUnordered, nextTarget, coordinatesToAvoid);
   // and now rotate to final position
   nextUnordered = puzzle.findNextUnsorted();
   puzzle.sortOne(nextUnordered);
   nextUnordered = puzzle.findNextUnsorted();
   puzzle.sortOne(nextUnordered);
-  //vertical DONE!!
+
+  const subPuzzle = horizontal
+    ? puzzleMatrix.slice(1)
+    : puzzleMatrix.map(row => row.slice(1));
+  const subPuzzles = solvePuzzle(subPuzzle);
 }
 
-function getDesiredResult(puzzle, xOffset, yOffset) {
+function getDesiredResult(puzzle) {
   const rowCount = puzzle.length;
   const colCount = puzzle[0].length;
 
-  let desiredResult = Array(rowCount)
-    .fill(0)
-    .map((_, rowIndex) => {
-      var row = Array(colCount)
-        .fill(0)
-        .map((_, colIndex) => colIndex + 1 + colCount * rowIndex);
-      return row;
-    });
-  desiredResult[rowCount - 1][colCount - 1] = 0;
+  const desiredResultFlat = puzzle
+    .flatMap(row => row)
+    .filter(n => n)
+    .sort((a, b) => (a > b ? 1 : a < b ? -1 : 0));
+  desiredResultFlat[desiredResultFlat.length] = 0;
 
-  if (yOffset) {
-    desiredResult = desiredResult.slice(yOffset);
-  }
-  if (xOffset) {
-    desiredResult = desiredResult.map(row => row.slice(xOffset));
-  }
+  let desiredResult = [];
 
+  for (let i = 0; i < rowCount * colCount; i = i + colCount) {
+    desiredResult.push(desiredResultFlat.slice(i, i + colCount));
+  }
   return desiredResult;
 }
 
