@@ -24,12 +24,12 @@ function solvePuzzle(puzzleMatrix) {
     nextUnordered.number,
     puzzle.desiredResult
   );
-  let coordinatesToAvoid = [];
+  let coosToAvoid = [];
   const horizontal = puzzle.width <= puzzle.height;
 
   while (!isInCorner(puzzle, nextTarget)) {
-    puzzle.sortOne(nextUnordered, null, coordinatesToAvoid);
-    coordinatesToAvoid.push(nextTarget);
+    puzzle.sortOne(nextUnordered, null, coosToAvoid);
+    coosToAvoid.push(nextTarget);
     nextUnordered = puzzle.findNextUnsorted();
     nextTarget = puzzle.getCoordinate(
       nextUnordered.number,
@@ -38,18 +38,27 @@ function solvePuzzle(puzzleMatrix) {
   }
 
   // in the corner now
-  coordinatesToAvoid = horizontal
+  coosToAvoid = horizontal
     ? puzzle.getCoordinates(0, 1, 0, puzzle.width - 2)
     : puzzle.getCoordinates(0, puzzle.height - 2, 0, 1);
+
+  const lastPlacedCoordinate = coosToAvoid[coosToAvoid.length - 1];
+  nextUnordered = lastPlacedCoordinate
+    ? puzzle.getCoordinate(
+        lastPlacedCoordinate.number +
+          (horizontal ? 1 : originalPuzzle[0].length)
+      )
+    : nextUnordered;
+  nextTarget = puzzle.getCoordinate(nextUnordered.number, puzzle.desiredResult);
   nextTarget[horizontal ? "x" : "y"]++;
 
-  puzzle.sortOne(nextUnordered, nextTarget, coordinatesToAvoid);
-  coordinatesToAvoid.push(nextTarget.copy());
+  puzzle.sortOne(nextUnordered, nextTarget, coosToAvoid);
+  coosToAvoid.push(nextTarget.copy());
   nextUnordered = puzzle.getCoordinate(
     nextUnordered.number + (horizontal ? 1 : originalPuzzle[0].length)
   );
   nextTarget[horizontal ? "y" : "x"]++;
-  puzzle.sortOne(nextUnordered, nextTarget, coordinatesToAvoid);
+  puzzle.sortOne(nextUnordered, nextTarget, coosToAvoid);
   // and now rotate to final position
   nextUnordered = puzzle.findNextUnsorted();
   puzzle.sortOne(nextUnordered);
