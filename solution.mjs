@@ -1,5 +1,4 @@
 import { Puzzle } from "./puzzle.mjs";
-import { Coordinate } from "./coordinate.mjs";
 
 const testM = [
   [5, 3, 17, 20, 11],
@@ -7,14 +6,6 @@ const testM = [
   [13, 24, 12, 15, 18],
   [14, 22, 9, 2, 19],
   [7, 8, 23, 4, 0]
-];
-
-const desiredResult = [
-  [1, 2, 3, 4, 5],
-  [6, 7, 8, 9, 10],
-  [11, 12, 13, 14, 15],
-  [16, 17, 18, 19, 20],
-  [21, 22, 23, 24, 0]
 ];
 
 solvePuzzle(testM);
@@ -32,6 +23,7 @@ function solvePuzzle(originalPuzzle) {
 
   while (!isInCorner(puzzle, nextTarget)) {
     puzzle.sortOne(nextUnordered);
+    coordinatesToAvoid.push(nextTarget);
     nextUnordered = puzzle.findNextUnsorted();
     nextTarget = puzzle.getCoordinate(
       nextUnordered.number,
@@ -41,7 +33,6 @@ function solvePuzzle(originalPuzzle) {
 
   // in the corner now - horizontal
   coordinatesToAvoid = puzzle.getCoordinates(0, 1, 0, puzzle.width - 2);
-
   nextTarget.x++;
   puzzle.sortOne(nextUnordered, nextTarget, coordinatesToAvoid);
   coordinatesToAvoid.push(nextTarget.copy());
@@ -72,6 +63,21 @@ function solvePuzzle(originalPuzzle) {
       puzzle.desiredResult
     );
   }
+
+  // in the corner now - vertical
+  coordinatesToAvoid = puzzle.getCoordinates(0, puzzle.height - 2, 0, 1);
+  nextTarget.y++;
+  puzzle.sortOne(nextUnordered, nextTarget, coordinatesToAvoid);
+  coordinatesToAvoid.push(nextTarget.copy());
+  nextUnordered = puzzle.getCoordinate(nextUnordered.number + puzzle.width);
+  nextTarget.x++;
+  puzzle.sortOne(nextUnordered, nextTarget, coordinatesToAvoid);
+  // and now rotate to final position
+  nextUnordered = puzzle.findNextUnsorted();
+  puzzle.sortOne(nextUnordered);
+  nextUnordered = puzzle.findNextUnsorted();
+  puzzle.sortOne(nextUnordered);
+  //vertical DONE!!
 }
 
 function getDesiredResult(puzzle, xOffset, yOffset) {

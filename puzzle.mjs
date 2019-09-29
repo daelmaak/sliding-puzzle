@@ -96,10 +96,10 @@ export class Puzzle {
     while (!targetCoordinate.equals(lastCoordinate)) {
       const xCandidate =
         d.deltaX > 0 ? lastCoordinate.x - 1 : lastCoordinate.x + 1;
-      const xCandidateCoordinate = new Coordinate(xCandidate, lastCoordinate.y);
+      let xCandidateCoordinate = new Coordinate(xCandidate, lastCoordinate.y);
       const yCandidate =
         d.deltaY > 0 ? lastCoordinate.y - 1 : lastCoordinate.y + 1;
-      const yCandidateCoordinate = new Coordinate(lastCoordinate.x, yCandidate);
+      let yCandidateCoordinate = new Coordinate(lastCoordinate.x, yCandidate);
 
       if (d.deltaX == 0 && d.deltaY == 0) {
         path.push(targetCoordinate);
@@ -112,9 +112,35 @@ export class Puzzle {
       } else if (!yCandidateCoordinate.isIn(avoidCoordinate)) {
         path.push(yCandidateCoordinate);
         d.deltaY > 0 ? d.deltaY-- : d.deltaY++;
-      } else {
+      } else if (!xCandidateCoordinate.isIn(avoidCoordinate)) {
         path.push(xCandidateCoordinate);
         d.deltaX > 0 ? d.deltaX-- : d.deltaX++;
+      } else {
+        // no progress forward possible, back off!
+        avoidCoordinate.push(lastCoordinate);
+
+        let xDelta = xCandidate > lastCoordinate.x ? -1 : 1;
+        xCandidateCoordinate = new Coordinate(
+          lastCoordinate.x + xDelta,
+          lastCoordinate.y
+        );
+        // back off horizontally
+        if (
+          xCandidateCoordinate.x >= 0 &&
+          !xCandidateCoordinate.isIn(avoidCoordinate)
+        ) {
+          path.push(xCandidateCoordinate);
+          d.deltaX <= 0 ? d.deltaX-- : d.deltaX++;
+        } else {
+          // back off vertically
+          let yDelta = yCandidate > lastCoordinate.y ? -1 : 1;
+          yCandidateCoordinate = new Coordinate(
+            lastCoordinate.x,
+            lastCoordinate.y + yDelta
+          );
+          path.push(yCandidateCoordinate);
+          d.deltaY <= 0 ? d.deltaY-- : d.deltaY++;
+        }
       }
 
       lastCoordinate = path[path.length - 1];
