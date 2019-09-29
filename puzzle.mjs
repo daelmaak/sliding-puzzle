@@ -4,17 +4,11 @@ export class Puzzle {
   constructor(puzzle, desiredResult) {
     this.puzzle = puzzle;
     this.desiredResult = desiredResult;
+    this.width = this.puzzle[0].length;
+    this.height = this.puzzle.length;
 
     console.info("desired result");
     console.info(this.desiredResult);
-  }
-
-  get width() {
-    return this.puzzle[0].length;
-  }
-
-  get hight() {
-    return this.puzzle.length;
   }
 
   /**
@@ -47,17 +41,17 @@ export class Puzzle {
     }
   }
 
-  /**
-   *
-   * @param startCoordinate
-   * @return Coordinate[]
-   */
-  getPathToTarget(startCoordinate) {
-    const targetCoordinate = this.getCoordinate(
-      startCoordinate.number,
-      this.desiredResult
-    );
-    return this.getPathTo(startCoordinate, targetCoordinate);
+  getCoordinates(
+    rowStart,
+    rowEnd = rowStart + 1,
+    colStart,
+    colEnd = colStart + 1
+  ) {
+    return this.puzzle
+      .slice(rowStart, rowEnd)
+      .flatMap(row =>
+        row.slice(colStart, colEnd).map(n => this.getCoordinate(n))
+      );
   }
 
   /**
@@ -84,11 +78,11 @@ export class Puzzle {
         path.push(targetCoordinate);
       } else if (
         Math.abs(d.deltaX) > Math.abs(d.deltaY) &&
-        !xCandidateCoordinate.equals(avoidCoordinate)
+        !xCandidateCoordinate.isIn(avoidCoordinate)
       ) {
         path.push(xCandidateCoordinate);
         d.deltaX > 0 ? d.deltaX-- : d.deltaX++;
-      } else if (!yCandidateCoordinate.equals(avoidCoordinate)) {
+      } else if (!yCandidateCoordinate.isIn(avoidCoordinate)) {
         path.push(yCandidateCoordinate);
         d.deltaY > 0 ? d.deltaY-- : d.deltaY++;
       } else {
@@ -102,14 +96,22 @@ export class Puzzle {
     return path;
   }
 
-  sortOne(startCoordinate) {
-    const path = this.getPathToTarget(startCoordinate);
+  sortOne(startCoordinate, targetCoordinate, avoidCoordinates = []) {
+    targetCoordinate =
+      targetCoordinate ||
+      this.getCoordinate(startCoordinate.number, this.desiredResult);
+    const path = this.getPathTo(
+      startCoordinate,
+      targetCoordinate,
+      avoidCoordinates
+    );
+
     console.info("path to target", path);
     let nextCoordinate = path.shift();
 
     while (nextCoordinate) {
       // move zero to swap position
-      this._moveZero(nextCoordinate, startCoordinate);
+      this._moveZero(nextCoordinate, avoidCoordinates.concat(startCoordinate));
       this._swap(nextCoordinate, startCoordinate);
       startCoordinate = nextCoordinate;
       nextCoordinate = path.shift();

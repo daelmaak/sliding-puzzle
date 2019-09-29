@@ -1,4 +1,5 @@
 import { Puzzle } from "./puzzle.mjs";
+import { Coordinate } from "./coordinate.mjs";
 
 const testM = [
   [5, 3, 17, 20, 11],
@@ -36,6 +37,22 @@ function solvePuzzle(puzzle) {
       puzzle.desiredResult
     );
   }
+
+  // in the corner now - horizontal
+  let coordinatesToAvoid = puzzle.getCoordinates(0, 1, 0, puzzle.width - 2);
+
+  nextTarget.x++;
+  puzzle.sortOne(nextUnordered, nextTarget, coordinatesToAvoid);
+  coordinatesToAvoid.push(nextTarget.copy());
+  nextUnordered = puzzle.getCoordinate(nextUnordered.number + 1);
+  nextTarget.y++;
+  puzzle.sortOne(nextUnordered, nextTarget, coordinatesToAvoid);
+  // and now rotate to final position
+  nextUnordered = puzzle.findNextUnsorted();
+  puzzle.sortOne(nextUnordered);
+  nextUnordered = puzzle.findNextUnsorted();
+  puzzle.sortOne(nextUnordered);
+  //horizontal DONE!!
 }
 
 function getDesiredResult(puzzle) {
