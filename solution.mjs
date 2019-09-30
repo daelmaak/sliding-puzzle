@@ -3,13 +3,12 @@ import { Coordinate } from "./coordinate.mjs";
 
 let originalPuzzle;
 const testM = [
-  [21, 14, 22, 9, 15],
-  [11, 1, 8, 12, 6],
-  [13, 7, 17, 23, 16],
-  [19, 3, 2, 5, 18],
-  [20, 24, 4, 10, 0]
+  [25, 28, 5, 4, 9, 21],
+  [12, 1, 14, 24, 7, 26],
+  [11, 27, 15, 23, 16, 3],
+  [2, 20, 13, 19, 6, 29],
+  [10, 8, 18, 17, 22, 0]
 ];
-
 console.log(solvePuzzle(testM));
 
 function solvePuzzle(puzzleMatrix) {
@@ -53,33 +52,25 @@ function solvePuzzle(puzzleMatrix) {
     ? puzzle.getCoordinates(0, 1, 0, puzzle.width - 2)
     : puzzle.getCoordinates(0, puzzle.height - 2, 0, 1);
 
-  let cornerCandidates;
-  let cornerTargets;
+  let cornerCandidate2 = puzzle.getCornerCoordinates(horizontal)[1];
+  const cornerTargets = puzzle.getCornerTargets(horizontal);
+  const bottomRightCoordinate = new Coordinate(
+    puzzle.width - 1,
+    puzzle.height - 1
+  );
+  // move second candidate to bottom right corner to avoid conflicts
+  puzzle.sortOne(cornerCandidate2, bottomRightCoordinate, coosToAvoid);
+  // coosToAvoid.push(bottomRightCoordinate);
 
-  for (let i = 0; i < 2; i++) {
-    cornerCandidates = puzzle.getCornerCoordinates(horizontal);
-    cornerTargets = puzzle.getCornerTargets(horizontal);
+  // move first candidate to position
+  const cornerCandidate1 = puzzle.getCornerCoordinates(horizontal)[0];
+  puzzle.sortOne(cornerCandidate1, cornerTargets[0], coosToAvoid);
+  coosToAvoid.push(cornerTargets[0]);
+  // coosToAvoid.splice(coosToAvoid.indexOf(bottomRightCoordinate), 1);
 
-    if (detectFuckUp(puzzle, horizontal)) {
-      const planBTarget = new Coordinate(puzzle.width - 1, puzzle.height - 1);
-      coosToAvoid = [];
-      puzzle.sortOne(cornerCandidates[1], planBTarget, coosToAvoid);
-      coosToAvoid = horizontal
-        ? puzzle.getCoordinates(0, 1, 0, puzzle.width - 2)
-        : puzzle.getCoordinates(0, puzzle.height - 2, 0, 1);
-
-      for (let j = 0; j < 2; j++) {
-        cornerCandidates = puzzle.getCornerCoordinates(horizontal);
-        cornerTargets = puzzle.getCornerTargets(horizontal);
-        puzzle.sortOne(cornerCandidates[j], cornerTargets[j], coosToAvoid);
-        coosToAvoid.push(cornerTargets[j]);
-      }
-      break;
-    }
-
-    puzzle.sortOne(cornerCandidates[i], cornerTargets[i], coosToAvoid);
-    coosToAvoid.push(cornerTargets[i]);
-  }
+  // move second candidate to position
+  cornerCandidate2 = puzzle.getCornerCoordinates(horizontal)[1];
+  puzzle.sortOne(cornerCandidate2, cornerTargets[1], coosToAvoid);
 
   // and now rotate the corner
   coosToAvoid = puzzle.getCornerTargets(horizontal);
@@ -94,17 +85,6 @@ function solvePuzzle(puzzleMatrix) {
     : puzzleMatrix.map(row => row.slice(1));
 
   return puzzle.resultMoves.concat(solvePuzzle(subPuzzle));
-}
-
-function detectFuckUp(puzzle, horizontal) {
-  if (!horizontal) {
-    return (
-      puzzle.desiredResult[puzzle.desiredResult.length - 2][0] ==
-        puzzle.puzzle[puzzle.puzzle.length - 1][0] &&
-      puzzle.desiredResult[puzzle.desiredResult.length - 1][0] ==
-        puzzle.puzzle[puzzle.puzzle.length - 2][0]
-    );
-  }
 }
 
 function getDesiredResult(puzzle) {
