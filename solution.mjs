@@ -2,6 +2,7 @@ import { Puzzle } from "./puzzle.mjs";
 import { Coordinate } from "./coordinate.mjs";
 
 let originalPuzzle;
+
 let testM = [
   [26, 63, 42, 1, 0, 55, 48, 54, 28],
   [58, 24, 20, 44, 2, 61, 10, 78, 53],
@@ -26,6 +27,7 @@ function slidePuzzle(puzzleMatrix) {
   // final 2x2
   if (puzzle.width == 2 && puzzle.height == 2) {
     let nextUnordered = puzzle.findNextUnsorted();
+    // checking for unsolvable matrices
     let counter = 0;
 
     while (nextUnordered && counter < 3) {
@@ -33,11 +35,10 @@ function slidePuzzle(puzzleMatrix) {
       nextUnordered = puzzle.findNextUnsorted();
       counter++;
     }
-    // TODO return results
     return counter >= 3 ? null : puzzle.resultMoves;
   }
 
-  // non corner ones
+  // non corner coordinates
   let nextUnordered = puzzle.findNextUnsorted();
   let nextTarget = puzzle.getCoordinate(
     nextUnordered.number,
@@ -56,7 +57,7 @@ function slidePuzzle(puzzleMatrix) {
     );
   }
 
-  // in the corner now
+  // in the corner now, so the 2x2 sub-matrix in the bottom right corner
   coosToAvoid = horizontal
     ? puzzle.getCoordinates(0, 1, 0, puzzle.width - 2)
     : puzzle.getCoordinates(0, puzzle.height - 2, 0, 1);
@@ -67,21 +68,20 @@ function slidePuzzle(puzzleMatrix) {
     puzzle.width - 1,
     puzzle.height - 1
   );
-  // move second candidate to bottom right corner to avoid conflicts
+  // move second corner candidate to bottom right corner to avoid conflicts
   puzzle.sortOne(cornerCandidate2, bottomRightCoordinate, coosToAvoid);
   // coosToAvoid.push(bottomRightCoordinate);
 
-  // move first candidate to position
+  // move first corner candidate to position
   const cornerCandidate1 = puzzle.getCornerCoordinates(horizontal)[0];
   puzzle.sortOne(cornerCandidate1, cornerTargets[0], coosToAvoid);
   coosToAvoid.push(cornerTargets[0]);
-  // coosToAvoid.splice(coosToAvoid.indexOf(bottomRightCoordinate), 1);
 
-  // move second candidate to position
+  // move second corner candidate to position
   cornerCandidate2 = puzzle.getCornerCoordinates(horizontal)[1];
   puzzle.sortOne(cornerCandidate2, cornerTargets[1], coosToAvoid);
 
-  // and now rotate the corner
+  // and now rotate the corner candidates until they fit in
   coosToAvoid = puzzle.getCornerTargets(horizontal);
   nextUnordered = puzzle.findNextUnsorted();
   puzzle.sortOne(nextUnordered, null, coosToAvoid);

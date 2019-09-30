@@ -38,7 +38,8 @@ export class Puzzle {
   }
 
   /**
-   *
+   * Get coordinates of those numbers whose target coordinates is the
+   * first horizontal or vertical part of the 2x2 submatrix in the bottom right corner
    * @param horizontal
    * @return Coordinate[]
    */
@@ -50,6 +51,10 @@ export class Puzzle {
     return cornerNumbers.map(n => this.getCoordinate(n));
   }
 
+  /**
+   * Get coordinates of the first horizontal or vertical part of the 2x2 submatrix in the bottom right corner
+   * @param horizontal
+   */
   getCornerTargets(horizontal = true) {
     const targetCoordinates = this.getCornerCoordinates(horizontal).map(c =>
       this.getCoordinate(c.number, this.desiredResult)
@@ -66,11 +71,6 @@ export class Puzzle {
     return targetCoordinates;
   }
 
-  /**
-   *
-   * @param number
-   * @return Coordinate
-   */
   getCoordinate(number, puzzle = this.puzzle) {
     let colIndex;
     let rowIndex;
@@ -83,11 +83,11 @@ export class Puzzle {
   }
 
   /**
-   *
-   * @param rowStart
-   * @param rowEnd
-   * @param colStart
-   * @param colEnd
+   * Get flattened coordinates of the given area
+   * @param rowStart - inclusive
+   * @param rowEnd - exclusive
+   * @param colStart - inclusive
+   * @param colEnd - exclusive
    * @return Coordinate[]
    */
   getCoordinates(
@@ -108,23 +108,21 @@ export class Puzzle {
   }
 
   /**
-   *
-   * @param startCoordinate
-   * @param targetCoordinate
    * @return Coordinate[]
    */
   getPathTo(startCoordinate, targetCoordinate, avoidCoordinate) {
-    // TODO build in coordinate avoidance
     const path = [];
     let lastCoordinate = startCoordinate;
 
     while (!targetCoordinate.equals(lastCoordinate)) {
       const { deltaX, deltaY } = lastCoordinate.minus(targetCoordinate);
 
+      // proposed coordinate with x-axis change
       let xCandidate = deltaX > 0 ? lastCoordinate.x - 1 : lastCoordinate.x + 1;
       xCandidate = this.width <= xCandidate ? xCandidate - 2 : xCandidate;
       let xCandidateCoordinate = new Coordinate(xCandidate, lastCoordinate.y);
 
+      // proposed coordinate with y-axis change
       let yCandidate = deltaY > 0 ? lastCoordinate.y - 1 : lastCoordinate.y + 1;
       yCandidate = this.height <= yCandidate ? yCandidate - 2 : yCandidate;
       let yCandidateCoordinate = new Coordinate(lastCoordinate.x, yCandidate);
@@ -132,16 +130,19 @@ export class Puzzle {
       if (deltaX == 0 && deltaY == 0) {
         path.push(targetCoordinate);
       } else if (
+        // close in on the further axis first in case there is no conflict
         Math.abs(deltaX) > Math.abs(deltaY) &&
         !xCandidateCoordinate.isIn(avoidCoordinate)
       ) {
         path.push(xCandidateCoordinate);
       } else if (!yCandidateCoordinate.isIn(avoidCoordinate)) {
+        // if y candidate doesn't mean collision
         path.push(yCandidateCoordinate);
       } else if (!xCandidateCoordinate.isIn(avoidCoordinate)) {
+        // if x candidate doesn't mean collision
         path.push(xCandidateCoordinate);
       } else {
-        // no progress forward possible, back off!
+        // no progress forward possible due to collisions, back off and mark current coordinate as to be avoided
         avoidCoordinate.push(lastCoordinate);
 
         let xDelta = xCandidate > lastCoordinate.x ? -1 : 1;
@@ -149,8 +150,9 @@ export class Puzzle {
           lastCoordinate.x + xDelta,
           lastCoordinate.y
         );
-        // back off horizontally
+
         if (
+          // back off horizontally
           xCandidateCoordinate.x >= 0 &&
           !xCandidateCoordinate.isIn(avoidCoordinate)
         ) {
@@ -172,6 +174,11 @@ export class Puzzle {
     return path;
   }
 
+  /**
+   * @param startCoordinate
+   * @param targetCoordinate - optional
+   * @param avoidCoordinates - optional
+   */
   sortOne(startCoordinate, targetCoordinate, avoidCoordinates = []) {
     targetCoordinate =
       targetCoordinate ||
