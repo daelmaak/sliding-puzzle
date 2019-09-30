@@ -8,9 +8,6 @@ export class Puzzle {
     this.height = this.puzzle.length;
 
     this.resultMoves = [];
-
-    console.info("desired result");
-    console.info(this.desiredResult);
   }
 
   /**
@@ -38,6 +35,35 @@ export class Puzzle {
     const nextUnordered = this.getCoordinate(number);
 
     return nextUnordered;
+  }
+
+  /**
+   *
+   * @param horizontal
+   * @return Coordinate[]
+   */
+  getCornerCoordinates(horizontal = true) {
+    const cornerNumbers = horizontal
+      ? this.desiredResult[0].slice(-2)
+      : this.desiredResult.slice(-2).map(row => row[0]);
+
+    return cornerNumbers.map(n => this.getCoordinate(n));
+  }
+
+  getCornerTargets(horizontal = true) {
+    const targetCoordinates = this.getCornerCoordinates(horizontal).map(c =>
+      this.getCoordinate(c.number, this.desiredResult)
+    );
+
+    if (horizontal) {
+      targetCoordinates[0].x++;
+      targetCoordinates[1].y++;
+    } else {
+      targetCoordinates[0].y++;
+      targetCoordinates[1].x++;
+    }
+
+    return targetCoordinates;
   }
 
   /**
@@ -89,32 +115,31 @@ export class Puzzle {
    */
   getPathTo(startCoordinate, targetCoordinate, avoidCoordinate) {
     // TODO build in coordinate avoidance
-    const d = startCoordinate.minus(targetCoordinate);
     const path = [];
     let lastCoordinate = startCoordinate;
 
     while (!targetCoordinate.equals(lastCoordinate)) {
-      const xCandidate =
-        d.deltaX > 0 ? lastCoordinate.x - 1 : lastCoordinate.x + 1;
+      const { deltaX, deltaY } = lastCoordinate.minus(targetCoordinate);
+
+      let xCandidate = deltaX > 0 ? lastCoordinate.x - 1 : lastCoordinate.x + 1;
+      xCandidate = this.width <= xCandidate ? xCandidate - 2 : xCandidate;
       let xCandidateCoordinate = new Coordinate(xCandidate, lastCoordinate.y);
-      const yCandidate =
-        d.deltaY > 0 ? lastCoordinate.y - 1 : lastCoordinate.y + 1;
+
+      let yCandidate = deltaY > 0 ? lastCoordinate.y - 1 : lastCoordinate.y + 1;
+      yCandidate = this.height <= yCandidate ? yCandidate - 2 : yCandidate;
       let yCandidateCoordinate = new Coordinate(lastCoordinate.x, yCandidate);
 
-      if (d.deltaX == 0 && d.deltaY == 0) {
+      if (deltaX == 0 && deltaY == 0) {
         path.push(targetCoordinate);
       } else if (
-        Math.abs(d.deltaX) > Math.abs(d.deltaY) &&
+        Math.abs(deltaX) > Math.abs(deltaY) &&
         !xCandidateCoordinate.isIn(avoidCoordinate)
       ) {
         path.push(xCandidateCoordinate);
-        d.deltaX > 0 ? d.deltaX-- : d.deltaX++;
       } else if (!yCandidateCoordinate.isIn(avoidCoordinate)) {
         path.push(yCandidateCoordinate);
-        d.deltaY > 0 ? d.deltaY-- : d.deltaY++;
       } else if (!xCandidateCoordinate.isIn(avoidCoordinate)) {
         path.push(xCandidateCoordinate);
-        d.deltaX > 0 ? d.deltaX-- : d.deltaX++;
       } else {
         // no progress forward possible, back off!
         avoidCoordinate.push(lastCoordinate);
@@ -130,7 +155,6 @@ export class Puzzle {
           !xCandidateCoordinate.isIn(avoidCoordinate)
         ) {
           path.push(xCandidateCoordinate);
-          d.deltaX <= 0 ? d.deltaX-- : d.deltaX++;
         } else {
           // back off vertically
           let yDelta = yCandidate > lastCoordinate.y ? -1 : 1;
@@ -139,7 +163,6 @@ export class Puzzle {
             lastCoordinate.y + yDelta
           );
           path.push(yCandidateCoordinate);
-          d.deltaY <= 0 ? d.deltaY-- : d.deltaY++;
         }
       }
 
@@ -167,8 +190,6 @@ export class Puzzle {
       startCoordinate = nextCoordinate;
       nextCoordinate = path.shift();
     }
-
-    console.info("after one sorted", this.puzzle);
   }
 
   _moveZero(targetCoordinate, avoidCoordinate) {
