@@ -2,16 +2,22 @@ import { Puzzle } from "./puzzle.mjs";
 import { Coordinate } from "./coordinate.mjs";
 
 let originalPuzzle;
-const testM = [
-  [25, 28, 5, 4, 9, 21],
-  [12, 1, 14, 24, 7, 26],
-  [11, 27, 15, 23, 16, 3],
-  [2, 20, 13, 19, 6, 29],
-  [10, 8, 18, 17, 22, 0]
+let testM = [
+  [26, 63, 42, 1, 0, 55, 48, 54, 28],
+  [58, 24, 20, 44, 2, 61, 10, 78, 53],
+  [77, 15, 5, 50, 22, 67, 60, 76, 56],
+  [65, 7, 73, 25, 80, 69, 74, 3, 29],
+  [59, 11, 16, 6, 31, 17, 37, 43, 13],
+  [35, 8, 66, 19, 30, 39, 34, 64, 57],
+  [47, 52, 68, 4, 36, 41, 14, 79, 45],
+  [18, 33, 40, 38, 70, 72, 21, 23, 32],
+  [49, 62, 75, 27, 9, 51, 71, 12, 46]
 ];
-console.log(solvePuzzle(testM));
+testM = [[10, 3, 6, 4], [1, 5, 8, 0], [2, 13, 7, 15], [14, 9, 12, 11]];
 
-function solvePuzzle(puzzleMatrix) {
+console.log(slidePuzzle(testM));
+
+function slidePuzzle(puzzleMatrix) {
   if (!originalPuzzle) originalPuzzle = puzzleMatrix;
 
   let desiredResult = getDesiredResult(puzzleMatrix);
@@ -20,12 +26,15 @@ function solvePuzzle(puzzleMatrix) {
   // final 2x2
   if (puzzle.width == 2 && puzzle.height == 2) {
     let nextUnordered = puzzle.findNextUnsorted();
-    while (nextUnordered) {
+    let counter = 0;
+
+    while (nextUnordered && counter < 3) {
       puzzle.sortOne(nextUnordered);
       nextUnordered = puzzle.findNextUnsorted();
+      counter++;
     }
     // TODO return results
-    return puzzle.resultMoves;
+    return counter >= 3 ? null : puzzle.resultMoves;
   }
 
   // non corner ones
@@ -84,7 +93,9 @@ function solvePuzzle(puzzleMatrix) {
     ? puzzleMatrix.slice(1)
     : puzzleMatrix.map(row => row.slice(1));
 
-  return puzzle.resultMoves.concat(solvePuzzle(subPuzzle));
+  const subResults = slidePuzzle(subPuzzle);
+
+  return subResults ? puzzle.resultMoves.concat(subResults) : null;
 }
 
 function getDesiredResult(puzzle) {
