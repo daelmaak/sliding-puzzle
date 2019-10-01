@@ -4,20 +4,11 @@ import { puzzleGenerator } from "./puzzleGenerator.mjs";
 
 let originalPuzzle;
 
-let hanging = [
-  [1, 40, 31, 14, 41, 60, 50, 42],
-  [17, 28, 55, 34, 54, 48, 11, 49],
-  [47, 43, 4, 58, 22, 15, 29, 7],
-  [46, 0, 38, 9, 25, 12, 53, 63],
-  [5, 37, 27, 8, 20, 3, 13, 44],
-  [59, 52, 57, 30, 62, 23, 61, 33],
-  [16, 19, 32, 21, 10, 18, 2, 45],
-  [35, 56, 51, 36, 26, 6, 39, 24]
-];
-let testM = puzzleGenerator(8, 8);
+let failing = [[7, 9, 4, 11], [6, 10, 0, 2], [14, 8, 5, 12], [1, 3, 15, 13]];
+let testM = puzzleGenerator(4, 4);
 
-console.info("input", testM);
-console.info("output", slidePuzzle(testM));
+console.info("input", failing);
+console.info("output", slidePuzzle(failing));
 
 function slidePuzzle(puzzleMatrix) {
   if (!originalPuzzle) originalPuzzle = puzzleMatrix;
@@ -45,8 +36,10 @@ function slidePuzzle(puzzleMatrix) {
     nextUnordered.number,
     puzzle.desiredResult
   );
-  let coosToAvoid = [];
   const horizontal = puzzle.width <= puzzle.height;
+  let coosToAvoid = horizontal
+    ? puzzle.getCoordinates(0, 1, 0, nextTarget.x)
+    : puzzle.getCoordinates(0, nextTarget.y, 0);
 
   while (!isInCorner(puzzle, nextTarget)) {
     puzzle.sortOne(nextUnordered, null, coosToAvoid);
