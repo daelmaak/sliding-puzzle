@@ -1,0 +1,394 @@
+<html>
+  <head>
+    <script>
+      function flatten(acc, next) {
+        return [...acc, ...next];
+      }
+
+      class Coordinate {
+        constructor(x, y, number) {
+          this.x = x;
+          this.y = y;
+          this.number = number;
+        }
+
+        /**
+         *
+         * @param coordinate
+         * @return object acting as delta
+         */
+        minus(coordinate) {
+          return {
+            deltaX: this.x - coordinate.x,
+            deltaY: this.y - coordinate.y
+          };
+        }
+
+        copy() {
+          return new Coordinate(this.x, this.y, this.number);
+        }
+
+        equals(coordinate) {
+          if (!coordinate) return false;
+          return coordinate.x == this.x && coordinate.y == this.y;
+        }
+
+        isIn(coordinates) {
+          if (!Array.isArray(coordinates)) return this.equals(coordinates);
+          return coordinates.find(c => this.equals(c));
+        }
+      }
+
+      class Puzzle {
+        constructor(puzzle, desiredResult) {
+          this.puzzle = puzzle;
+          this.desiredResult = desiredResult;
+          this.width = this.puzzle[0].length;
+          this.height = this.puzzle.length;
+
+          this.resultMoves = [];
+        }
+
+        /**
+         * @return Coordinate
+         */
+        findNextUnsorted() {
+          let puzzleFlat;
+          let desiredPuzzleFlat;
+
+          if (this.height >= this.width) {
+            puzzleFlat = this.puzzle.reduce(flatten, []);
+            desiredPuzzleFlat = this.desiredResult.reduce(flatten, []);
+          } else {
+            puzzleFlat = [];
+            desiredPuzzleFlat = [];
+
+            // rotating the puzzle by 90deg
+            for (let i = 0; i < this.width; i++) {
+              puzzleFlat.push(...this.puzzle.map(row => row[i]));
+              desiredPuzzleFlat.push(...this.desiredResult.map(row => row[i]));
+            }
+          }
+
+          const number = desiredPuzzleFlat.find((n, i) => puzzleFlat[i] != n);
+          const nextUnordered = this.getCoordinate(number);
+
+          return nextUnordered;
+        }
+
+        /**
+         * Get coordinates of those numbers whose target coordinates is the
+         * first horizontal or vertical part of the 2x2 submatrix in the bottom right corner
+         * @param horizontal
+         * @return Coordinate[]
+         */
+        getCornerCoordinates(horizontal = true) {
+          const cornerNumbers = horizontal
+            ? this.desiredResult[0].slice(-2)
+            : this.desiredResult.slice(-2).map(row => row[0]);
+
+          return cornerNumbers.map(n => this.getCoordinate(n));
+        }
+
+        /**
+         * Get coordinates of the first horizontal or vertical part of the 2x2 submatrix in the bottom right corner
+         * @param horizontal
+         */
+        getCornerTargets(horizontal = true) {
+          const targetCoordinates = this.getCornerCoordinates(horizontal).map(c =>
+            this.getCoordinate(c.number, this.desiredResult)
+          );
+
+          if (horizontal) {
+            targetCoordinates[0].x++;
+            targetCoordinates[1].y++;
+          } else {
+            targetCoordinates[0].y++;
+            targetCoordinates[1].x++;
+          }
+
+          return targetCoordinates;
+        }
+
+        getCoordinate(number, puzzle = this.puzzle) {
+          let colIndex;
+          let rowIndex;
+          for (let row of puzzle) {
+            if ((colIndex = row.indexOf(number)) > -1) {
+              rowIndex = puzzle.indexOf(row);
+              return new Coordinate(colIndex, rowIndex, number);
+            }
+          }
+        }
+
+        /**
+         * Get flattened coordinates of the given area
+         * @param rowStart - inclusive
+         * @param rowEnd - exclusive
+         * @param colStart - inclusive
+         * @param colEnd - exclusive
+         * @return Coordinate[]
+         */
+        getCoordinates(
+          rowStart,
+          rowEnd = rowStart + 1,
+          colStart,
+          colEnd = colStart + 1
+        ) {
+          return this.puzzle
+            .slice(rowStart, rowEnd)
+            .map(row =>
+              row.slice(colStart, colEnd).map(n => this.getCoordinate(n))
+            )
+            .reduce(flatten, []);
+        }
+
+        getNumber(coordinate) {
+          return this.puzzle[coordinate.y][coordinate.x];
+        }
+
+        /**
+         * @return Coordinate[]
+         */
+        getPathTo(startCoordinate, targetCoordinate, avoidCoordinate) {
+          const path = [];
+          let lastCoordinate = startCoordinate;
+
+          while (!targetCoordinate.equals(lastCoordinate)) {
+            const { deltaX, deltaY } = lastCoordinate.minus(targetCoordinate);
+
+            // proposed coordinate with x-axis change
+            let xCandidate = deltaX > 0 ? lastCoordinate.x - 1 : lastCoordinate.x + 1;
+            xCandidate = this.width <= xCandidate ? xCandidate - 2 : xCandidate;
+            let xCandidateCoordinate = new Coordinate(xCandidate, lastCoordinate.y);
+
+            // proposed coordinate with y-axis change
+            let yCandidate = deltaY > 0 ? lastCoordinate.y - 1 : lastCoordinate.y + 1;
+            yCandidate = this.height <= yCandidate ? yCandidate - 2 : yCandidate;
+            let yCandidateCoordinate = new Coordinate(lastCoordinate.x, yCandidate);
+
+            if (deltaX == 0 && deltaY == 0) {
+              path.push(targetCoordinate);
+            } else if (
+              // close in on the further axis first in case there is no conflict
+              Math.abs(deltaX) > Math.abs(deltaY) &&
+              !xCandidateCoordinate.isIn(avoidCoordinate)
+            ) {
+              path.push(xCandidateCoordinate);
+            } else if (!yCandidateCoordinate.isIn(avoidCoordinate)) {
+              // if y candidate doesn't mean collision
+              path.push(yCandidateCoordinate);
+            } else if (!xCandidateCoordinate.isIn(avoidCoordinate)) {
+              // if x candidate doesn't mean collision
+              path.push(xCandidateCoordinate);
+            } else {
+              // no progress forward possible due to collisions, back off and mark current coordinate as to be avoided
+              avoidCoordinate.push(lastCoordinate);
+
+              let xDelta = xCandidate > lastCoordinate.x ? -1 : 1;
+              let xBackOffCoordinate = new Coordinate(
+                lastCoordinate.x + xDelta,
+                lastCoordinate.y
+              );
+
+              if (
+                // back off horizontally
+                xBackOffCoordinate.x >= 0 &&
+                !xBackOffCoordinate.isIn(avoidCoordinate) &&
+                targetCoordinate.y != 0
+              ) {
+                path.push(xBackOffCoordinate);
+              } else {
+                // back off vertically
+                let yDelta = yCandidate > lastCoordinate.y ? -1 : 1;
+                let yBackOffCoordinate = new Coordinate(
+                  lastCoordinate.x,
+                  lastCoordinate.y + yDelta
+                );
+                path.push(yBackOffCoordinate);
+              }
+            }
+
+            lastCoordinate = path[path.length - 1];
+          }
+
+          return path;
+        }
+
+        /**
+         * @param startCoordinate
+         * @param targetCoordinate - optional
+         * @param avoidCoordinates - optional
+         */
+        sortOne(startCoordinate, targetCoordinate, avoidCoordinates = []) {
+          targetCoordinate =
+            targetCoordinate ||
+            this.getCoordinate(startCoordinate.number, this.desiredResult);
+          const path = this.getPathTo(
+            startCoordinate,
+            targetCoordinate,
+            avoidCoordinates
+          );
+          let nextCoordinate = path.shift();
+
+          while (nextCoordinate) {
+            // move zero to swap position
+            this._moveZero(nextCoordinate, avoidCoordinates.concat(startCoordinate));
+            this._swap(nextCoordinate, startCoordinate);
+            startCoordinate = nextCoordinate;
+            nextCoordinate = path.shift();
+          }
+        }
+
+        _moveZero(targetCoordinate, avoidCoordinate) {
+          const zeroCoordinate = this.getCoordinate(0);
+          const pathToTarget = [zeroCoordinate].concat(
+            this.getPathTo(zeroCoordinate, targetCoordinate, avoidCoordinate)
+          );
+
+          for (let i = 0; i < pathToTarget.length - 1; i++) {
+            this._swap(pathToTarget[i], pathToTarget[i + 1]);
+          }
+        }
+
+        _swap(coordinate1, coordinate2) {
+          let temp = this.puzzle[coordinate1.y][coordinate1.x];
+          this.puzzle[coordinate1.y][coordinate1.x] = this.puzzle[coordinate2.y][
+            coordinate2.x
+          ];
+          this.puzzle[coordinate2.y][coordinate2.x] = temp;
+
+          const number1 = this.getNumber(coordinate1);
+          const number2 = this.getNumber(coordinate2);
+          this.resultMoves.push(number1 || number2);
+        }
+      }
+
+      let originalPuzzle;
+
+      function slidePuzzle(puzzleMatrix) {
+        if (!originalPuzzle) originalPuzzle = puzzleMatrix;
+
+        let desiredResult = getDesiredResult(puzzleMatrix);
+        let puzzle = new Puzzle(puzzleMatrix, desiredResult);
+
+        // final 2x2
+        if (puzzle.width == 2 && puzzle.height == 2) {
+          let nextUnordered = puzzle.findNextUnsorted();
+          // checking for unsolvable matrices
+          let counter = 0;
+
+          while (nextUnordered && counter < 3) {
+            puzzle.sortOne(nextUnordered);
+            nextUnordered = puzzle.findNextUnsorted();
+            counter++;
+          }
+          return counter >= 3 ? null : puzzle.resultMoves;
+        }
+
+        // non corner coordinates
+        let nextUnordered = puzzle.findNextUnsorted();
+        let nextTarget = puzzle.getCoordinate(
+          nextUnordered.number,
+          puzzle.desiredResult
+        );
+        const horizontal = puzzle.width <= puzzle.height;
+        let coosToAvoid = horizontal
+          ? puzzle.getCoordinates(0, 1, 0, nextTarget.x)
+          : puzzle.getCoordinates(0, nextTarget.y, 0);
+
+        while (!isInCorner(puzzle, nextTarget)) {
+          puzzle.sortOne(nextUnordered, null, coosToAvoid);
+          nextUnordered = puzzle.findNextUnsorted();
+          nextTarget = puzzle.getCoordinate(
+            nextUnordered.number,
+            puzzle.desiredResult
+          );
+          coosToAvoid = horizontal
+            ? puzzle.getCoordinates(0, 1, 0, nextTarget.x)
+            : puzzle.getCoordinates(0, nextTarget.y, 0);
+        }
+
+        // in the corner now, so the 2x2 sub-matrix in the bottom right corner
+        const cornerCoordinates = puzzle.getCornerCoordinates(horizontal);
+        const cornerAlreadySorted = cornerCoordinates.every(c =>
+          c.equals(puzzle.getCoordinate(c.number, puzzle.desiredResult))
+        );
+        // if corner not sorted
+        if (!cornerAlreadySorted) {
+          let cornerCandidate2 = cornerCoordinates[1];
+          const cornerTargets = puzzle.getCornerTargets(horizontal);
+          const bottomRightCoordinate = new Coordinate(
+            puzzle.width - 1,
+            puzzle.height - 1
+          );
+          // move second corner candidate to bottom right corner to avoid conflicts
+          puzzle.sortOne(cornerCandidate2, bottomRightCoordinate, coosToAvoid);
+
+          // move first corner candidate to position
+          const cornerCandidate1 = puzzle.getCornerCoordinates(horizontal)[0];
+          puzzle.sortOne(cornerCandidate1, cornerTargets[0], coosToAvoid);
+          coosToAvoid.push(cornerTargets[0]);
+
+          // move second corner candidate to position
+          cornerCandidate2 = puzzle.getCornerCoordinates(horizontal)[1];
+          puzzle.sortOne(cornerCandidate2, cornerTargets[1], coosToAvoid);
+
+          // and now rotate the corner candidates until they fit in
+          coosToAvoid = puzzle.getCornerTargets(horizontal);
+          nextUnordered = puzzle.findNextUnsorted();
+          puzzle.sortOne(nextUnordered, null, coosToAvoid);
+          coosToAvoid = [];
+          nextUnordered = puzzle.findNextUnsorted();
+          puzzle.sortOne(nextUnordered, null, coosToAvoid);
+        }
+
+        const subPuzzle = horizontal
+          ? puzzleMatrix.slice(1)
+          : puzzleMatrix.map(row => row.slice(1));
+
+        const subResults = slidePuzzle(subPuzzle);
+
+        return subResults ? puzzle.resultMoves.concat(subResults) : null;
+      }
+
+      function getDesiredResult(puzzle) {
+        const rowCount = puzzle.length;
+        const colCount = puzzle[0].length;
+
+        const desiredResultFlat = puzzle
+          .reduce(flatten, [])
+          .filter(n => n)
+          .sort((a, b) => (a > b ? 1 : a < b ? -1 : 0));
+        desiredResultFlat[desiredResultFlat.length] = 0;
+
+        let desiredResult = [];
+
+        for (let i = 0; i < rowCount * colCount; i = i + colCount) {
+          desiredResult.push(desiredResultFlat.slice(i, i + colCount));
+        }
+        return desiredResult;
+      }
+
+      function isInCorner(puzzle, coordinate) {
+        return (
+          puzzle.width - (coordinate.x + 1) < 2 ||
+          puzzle.height - (coordinate.y + 1) < 2
+        );
+      }
+
+      
+    </script>
+  </head>
+  <body>
+    <button onclick="slidePuzzle([
+    [47, 7, 40, 48, 6, 12, 33],
+    [38, 22, 13, 0, 36, 9, 27],
+    [45, 17, 35, 14, 44, 10, 39],
+    [24, 31, 46, 2, 20, 15, 3],
+    [26, 25, 29, 11, 43, 23, 4],
+    [1, 18, 8, 42, 41, 16, 34],
+    [5, 37, 30, 19, 28, 21, 32]
+  ])">GO</button>
+  </body>
+</html>

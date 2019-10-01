@@ -1,4 +1,5 @@
 import { Coordinate } from "./coordinate.mjs";
+import { flatten } from "./util.mjs";
 
 export class Puzzle {
   constructor(puzzle, desiredResult) {
@@ -18,8 +19,8 @@ export class Puzzle {
     let desiredPuzzleFlat;
 
     if (this.height >= this.width) {
-      puzzleFlat = this.puzzle.flatMap(row => row);
-      desiredPuzzleFlat = this.desiredResult.flatMap(row => row);
+      puzzleFlat = this.puzzle.reduce(flatten, []);
+      desiredPuzzleFlat = this.desiredResult.reduce(flatten, []);
     } else {
       puzzleFlat = [];
       desiredPuzzleFlat = [];
@@ -98,9 +99,8 @@ export class Puzzle {
   ) {
     return this.puzzle
       .slice(rowStart, rowEnd)
-      .flatMap(row =>
-        row.slice(colStart, colEnd).map(n => this.getCoordinate(n))
-      );
+      .map(row => row.slice(colStart, colEnd).map(n => this.getCoordinate(n)))
+      .reduce(flatten, []);
   }
 
   getNumber(coordinate) {
