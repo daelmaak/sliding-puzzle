@@ -146,25 +146,26 @@ export class Puzzle {
         avoidCoordinate.push(lastCoordinate);
 
         let xDelta = xCandidate > lastCoordinate.x ? -1 : 1;
-        xCandidateCoordinate = new Coordinate(
+        let xBackOffCoordinate = new Coordinate(
           lastCoordinate.x + xDelta,
           lastCoordinate.y
         );
 
         if (
           // back off horizontally
-          xCandidateCoordinate.x >= 0 &&
-          !xCandidateCoordinate.isIn(avoidCoordinate)
+          xBackOffCoordinate.x >= 0 &&
+          !xBackOffCoordinate.isIn(avoidCoordinate) &&
+          targetCoordinate.y != 0
         ) {
-          path.push(xCandidateCoordinate);
+          path.push(xBackOffCoordinate);
         } else {
           // back off vertically
           let yDelta = yCandidate > lastCoordinate.y ? -1 : 1;
-          yCandidateCoordinate = new Coordinate(
+          let yBackOffCoordinate = new Coordinate(
             lastCoordinate.x,
             lastCoordinate.y + yDelta
           );
-          path.push(yCandidateCoordinate);
+          path.push(yBackOffCoordinate);
         }
       }
 

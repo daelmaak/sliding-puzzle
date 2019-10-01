@@ -1,22 +1,23 @@
 import { Puzzle } from "./puzzle.mjs";
 import { Coordinate } from "./coordinate.mjs";
+import { puzzleGenerator } from "./puzzleGenerator.mjs";
 
 let originalPuzzle;
 
-let testM = [
-  [26, 63, 42, 1, 0, 55, 48, 54, 28],
-  [58, 24, 20, 44, 2, 61, 10, 78, 53],
-  [77, 15, 5, 50, 22, 67, 60, 76, 56],
-  [65, 7, 73, 25, 80, 69, 74, 3, 29],
-  [59, 11, 16, 6, 31, 17, 37, 43, 13],
-  [35, 8, 66, 19, 30, 39, 34, 64, 57],
-  [47, 52, 68, 4, 36, 41, 14, 79, 45],
-  [18, 33, 40, 38, 70, 72, 21, 23, 32],
-  [49, 62, 75, 27, 9, 51, 71, 12, 46]
+let hanging = [
+  [1, 40, 31, 14, 41, 60, 50, 42],
+  [17, 28, 55, 34, 54, 48, 11, 49],
+  [47, 43, 4, 58, 22, 15, 29, 7],
+  [46, 0, 38, 9, 25, 12, 53, 63],
+  [5, 37, 27, 8, 20, 3, 13, 44],
+  [59, 52, 57, 30, 62, 23, 61, 33],
+  [16, 19, 32, 21, 10, 18, 2, 45],
+  [35, 56, 51, 36, 26, 6, 39, 24]
 ];
-testM = [[10, 3, 6, 4], [1, 5, 8, 0], [2, 13, 7, 15], [14, 9, 12, 11]];
+let testM = puzzleGenerator(8, 8);
 
-console.log(slidePuzzle(testM));
+console.info("input", testM);
+console.info("output", slidePuzzle(testM));
 
 function slidePuzzle(puzzleMatrix) {
   if (!originalPuzzle) originalPuzzle = puzzleMatrix;
@@ -49,19 +50,17 @@ function slidePuzzle(puzzleMatrix) {
 
   while (!isInCorner(puzzle, nextTarget)) {
     puzzle.sortOne(nextUnordered, null, coosToAvoid);
-    coosToAvoid.push(nextTarget);
     nextUnordered = puzzle.findNextUnsorted();
     nextTarget = puzzle.getCoordinate(
       nextUnordered.number,
       puzzle.desiredResult
     );
+    coosToAvoid = horizontal
+      ? puzzle.getCoordinates(0, 1, 0, nextTarget.x)
+      : puzzle.getCoordinates(0, nextTarget.y, 0);
   }
 
   // in the corner now, so the 2x2 sub-matrix in the bottom right corner
-  coosToAvoid = horizontal
-    ? puzzle.getCoordinates(0, 1, 0, puzzle.width - 2)
-    : puzzle.getCoordinates(0, puzzle.height - 2, 0, 1);
-
   let cornerCandidate2 = puzzle.getCornerCoordinates(horizontal)[1];
   const cornerTargets = puzzle.getCornerTargets(horizontal);
   const bottomRightCoordinate = new Coordinate(
@@ -70,7 +69,6 @@ function slidePuzzle(puzzleMatrix) {
   );
   // move second corner candidate to bottom right corner to avoid conflicts
   puzzle.sortOne(cornerCandidate2, bottomRightCoordinate, coosToAvoid);
-  // coosToAvoid.push(bottomRightCoordinate);
 
   // move first corner candidate to position
   const cornerCandidate1 = puzzle.getCornerCoordinates(horizontal)[0];
