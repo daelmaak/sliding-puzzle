@@ -2,13 +2,13 @@ import { Puzzle } from "./puzzle.mjs";
 import { Coordinate } from "./coordinate.mjs";
 import { puzzleGenerator } from "./puzzleGenerator.mjs";
 
-let originalPuzzle;
-
-let failing = [[7, 9, 4, 11], [6, 10, 0, 2], [14, 8, 5, 12], [1, 3, 15, 13]];
+let failing = [[0, 13, 2, 9], [5, 15, 1, 7], [10, 11, 6, 14], [8, 3, 4, 12]];
 let testM = puzzleGenerator(4, 4);
 
-console.info("input", failing);
-console.info("output", slidePuzzle(failing));
+console.info("input", testM);
+console.info("output", slidePuzzle(testM));
+
+let originalPuzzle;
 
 function slidePuzzle(puzzleMatrix) {
   if (!originalPuzzle) originalPuzzle = puzzleMatrix;
@@ -54,31 +54,38 @@ function slidePuzzle(puzzleMatrix) {
   }
 
   // in the corner now, so the 2x2 sub-matrix in the bottom right corner
-  let cornerCandidate2 = puzzle.getCornerCoordinates(horizontal)[1];
-  const cornerTargets = puzzle.getCornerTargets(horizontal);
-  const bottomRightCoordinate = new Coordinate(
-    puzzle.width - 1,
-    puzzle.height - 1
+  const cornerCoordinates = puzzle.getCornerCoordinates(horizontal);
+  const cornerAlreadySorted = cornerCoordinates.every(c =>
+    c.equals(puzzle.getCoordinate(c.number, puzzle.desiredResult))
   );
-  // move second corner candidate to bottom right corner to avoid conflicts
-  puzzle.sortOne(cornerCandidate2, bottomRightCoordinate, coosToAvoid);
+  // if corner not sorted
+  if (!cornerAlreadySorted) {
+    let cornerCandidate2 = cornerCoordinates[1];
+    const cornerTargets = puzzle.getCornerTargets(horizontal);
+    const bottomRightCoordinate = new Coordinate(
+      puzzle.width - 1,
+      puzzle.height - 1
+    );
+    // move second corner candidate to bottom right corner to avoid conflicts
+    puzzle.sortOne(cornerCandidate2, bottomRightCoordinate, coosToAvoid);
 
-  // move first corner candidate to position
-  const cornerCandidate1 = puzzle.getCornerCoordinates(horizontal)[0];
-  puzzle.sortOne(cornerCandidate1, cornerTargets[0], coosToAvoid);
-  coosToAvoid.push(cornerTargets[0]);
+    // move first corner candidate to position
+    const cornerCandidate1 = puzzle.getCornerCoordinates(horizontal)[0];
+    puzzle.sortOne(cornerCandidate1, cornerTargets[0], coosToAvoid);
+    coosToAvoid.push(cornerTargets[0]);
 
-  // move second corner candidate to position
-  cornerCandidate2 = puzzle.getCornerCoordinates(horizontal)[1];
-  puzzle.sortOne(cornerCandidate2, cornerTargets[1], coosToAvoid);
+    // move second corner candidate to position
+    cornerCandidate2 = puzzle.getCornerCoordinates(horizontal)[1];
+    puzzle.sortOne(cornerCandidate2, cornerTargets[1], coosToAvoid);
 
-  // and now rotate the corner candidates until they fit in
-  coosToAvoid = puzzle.getCornerTargets(horizontal);
-  nextUnordered = puzzle.findNextUnsorted();
-  puzzle.sortOne(nextUnordered, null, coosToAvoid);
-  coosToAvoid = [];
-  nextUnordered = puzzle.findNextUnsorted();
-  puzzle.sortOne(nextUnordered, null, coosToAvoid);
+    // and now rotate the corner candidates until they fit in
+    coosToAvoid = puzzle.getCornerTargets(horizontal);
+    nextUnordered = puzzle.findNextUnsorted();
+    puzzle.sortOne(nextUnordered, null, coosToAvoid);
+    coosToAvoid = [];
+    nextUnordered = puzzle.findNextUnsorted();
+    puzzle.sortOne(nextUnordered, null, coosToAvoid);
+  }
 
   const subPuzzle = horizontal
     ? puzzleMatrix.slice(1)
