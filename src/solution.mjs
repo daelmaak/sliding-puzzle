@@ -1,17 +1,9 @@
 import { Puzzle } from "./puzzle.mjs";
 import { Coordinate } from "./coordinate.mjs";
-import { puzzleGenerator } from "./puzzleGenerator.mjs";
-import { flatten } from "./util.mjs";
-
-let failing = [[0, 13, 2, 9], [5, 15, 1, 7], [10, 11, 6, 14], [8, 3, 4, 12]];
-let testM = puzzleGenerator(7, 7);
-
-console.info("input", testM);
-console.info("output", slidePuzzle(testM));
 
 var originalPuzzle;
 
-function slidePuzzle(puzzleMatrix) {
+export function slidePuzzle(puzzleMatrix) {
   if (!originalPuzzle) originalPuzzle = puzzleMatrix;
 
   let desiredResult = getDesiredResult(puzzleMatrix);
@@ -102,7 +94,7 @@ function getDesiredResult(puzzle) {
   const colCount = puzzle[0].length;
 
   const desiredResultFlat = puzzle
-    .reduce(flatten, [])
+    .flat()
     .filter(n => n)
     .sort((a, b) => (a > b ? 1 : a < b ? -1 : 0));
   desiredResultFlat[desiredResultFlat.length] = 0;

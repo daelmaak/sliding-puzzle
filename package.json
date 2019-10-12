@@ -4,9 +4,11 @@
   "description": "",
   "main": "coordinate.js",
   "dependencies": {},
-  "devDependencies": {},
+  "devDependencies": {
+    "http-server": "^0.11.1"
+  },
   "scripts": {
-    "start": "node --experimental-modules solution.mjs",
+    "start": "http-server .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
