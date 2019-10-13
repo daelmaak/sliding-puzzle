@@ -3,6 +3,7 @@
 
   export let puzzle;
   export let solution;
+  export let speed;
 
   let cellWidth;
   let cellHeight;
@@ -15,14 +16,15 @@
 
     puzzleEl.style.setProperty('--rows', puzzle.length);
     puzzleEl.style.setProperty('--cols', puzzle[0].length);
+    puzzleEl.style.setProperty('--background-size', puzzle[0].length * 240 + 'px');
 
     const style = getComputedStyle(puzzleEl);
     cellWidth = parseInt(style.getPropertyValue('--cell-width'));
     cellHeight = parseInt(style.getPropertyValue('--cell-height'));
 
+    // determine background position for the image
     const startX = 300;
     const startY = 0;
-
     puzzle.forEach((row, i) => {
       row.forEach((cell, j) => {
         let number = j + 1 + i * puzzle[0].length;
@@ -36,15 +38,15 @@
     });
   }
 
+  $: if (puzzleEl && speed) {
+    puzzleEl.style.setProperty('--animation-time', `${speed}ms`);
+  }
+
   function solve() {
     const p = new Puzzle(puzzle);
-    const s = solution.slice();
-    const animationTime = getComputedStyle(puzzleEl)
-        .getPropertyValue('--animation-time')
-        .replace('s', '') * 1000;
 
     solutionInterval = setInterval(() => {
-      const nextToSwap = s.shift();
+      const nextToSwap = solution.shift();
       
       if (!nextToSwap) {
         solved = true;
@@ -55,7 +57,7 @@
       const direction = p.swapWithZero(nextToSwap);
 
       _updatePositions(nextToSwap, direction);
-    }, animationTime + 50)
+    }, speed + 50)
   }
 
   function stop() {
@@ -108,7 +110,6 @@
   .puzzle {
     --cell-width: 170px;
     --cell-height: 120px;
-    --animation-time: 0.2s;
 
     display: grid;
     grid-template-rows: repeat(var(--rows), var(--cell-height));
@@ -130,7 +131,7 @@
 
     color: white;
     background-image: url(/dog1.jpg);
-    background-size: 1200px;
+    background-size: var(--background-size);
 
   }
 
