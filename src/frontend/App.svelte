@@ -14,7 +14,7 @@
 		solution = null;
 
 		while (!solution) {
-			p = puzzleGenerator(3,3);
+			p = puzzleGenerator(5,5);
 			solution = slidePuzzle(p);
 		}
 

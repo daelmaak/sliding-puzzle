@@ -4,12 +4,36 @@
   export let puzzle;
   export let solution;
 
+  let cellWidth;
+  let cellHeight;
   let solutionInterval;
   let puzzleEl;
+  let solved = false;
 
   $: if (puzzle && puzzleEl) {
+    solved = false;
+
     puzzleEl.style.setProperty('--rows', puzzle.length);
     puzzleEl.style.setProperty('--cols', puzzle[0].length);
+
+    const style = getComputedStyle(puzzleEl);
+    cellWidth = parseInt(style.getPropertyValue('--cell-width'));
+    cellHeight = parseInt(style.getPropertyValue('--cell-height'));
+
+    const startX = 300;
+    const startY = 0;
+
+    puzzle.forEach((row, i) => {
+      row.forEach((cell, j) => {
+        let number = j + 1 + i * puzzle[0].length;
+        // last number is zero
+        number = i == puzzle.length - 1 && j == puzzle[0].length - 1 ? 0 : number;
+
+        const cellEl = puzzleEl.querySelector(`[data-number="${number}"]`);
+
+        cellEl.style.setProperty('background-position', `-${startX + cellWidth * j}px -${startY + cellHeight * i}px`);
+      });
+    });
   }
 
   function solve() {
@@ -22,7 +46,11 @@
     solutionInterval = setInterval(() => {
       const nextToSwap = s.shift();
       
-      if (!nextToSwap) return stop();
+      if (!nextToSwap) {
+        solved = true;
+        stop();
+        return;
+      } 
 
       const direction = p.swapWithZero(nextToSwap);
 
@@ -38,11 +66,6 @@
     // TODO count not only on pixels here
     const xPattern = /translateX\((-?\d+)px\)/;
     const yPattern = /translateY\((-?\d+)px\)/;
-
-    // TODO optimize
-    const style = getComputedStyle(puzzleEl);
-    const cellWidth = parseInt(style.getPropertyValue('--cell-width'));
-    const cellHeight = parseInt(style.getPropertyValue('--cell-height'));
 
     const zeroCell = puzzleEl.querySelector('[data-number="0"]');
     const numberCell = puzzleEl.querySelector(`[data-number="${number}"]`);
@@ -83,16 +106,17 @@
 
 <style>
   .puzzle {
-    --cell-width: 50px;
-    --cell-height: 50px;
-    --animation-time: 0.3s;
+    --cell-width: 170px;
+    --cell-height: 120px;
+    --animation-time: 0.2s;
 
     display: grid;
-    grid-template-rows: repeat(var(--rows), var(--cell-width));
+    grid-template-rows: repeat(var(--rows), var(--cell-height));
     grid-template-columns: repeat(var(--cols), var(--cell-width));
     
     width: calc(var(--cols) * var(--cell-width));
     margin: 0 auto;
+    font-size: 2em;
   }
 
   .cell {
@@ -102,7 +126,17 @@
     line-height: var(--cell-height);
     border: 1px solid rgb(184, 184, 184);
     box-sizing: border-box;
-    transition: transform var(--animation-time);
+    transition: transform var(--animation-time), color 1s, border 1s;
+
+    color: white;
+    background-image: url(/dog1.jpg);
+    background-size: 1200px;
+
+  }
+
+  .cell.transparent {
+    color: transparent;
+    border: transparent;
   }
 </style>
 
@@ -113,7 +147,7 @@
   <div class="puzzle" bind:this={puzzleEl}>
     {#each puzzle as row}
       {#each row as number}
-        <div class="cell" data-number={number}>{number}</div>
+        <div class="cell" class:transparent={solved} data-number={number}>{number}</div>
       {/each}
     {/each}
   </div>
