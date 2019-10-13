@@ -200,6 +200,21 @@ export class Puzzle {
     }
   }
 
+  swapWithZero(numberToSwap) {
+    const zeroCo = this.getCoordinate(0);
+    const numberCo = this.getCoordinate(numberToSwap);
+
+    const { deltaX, deltaY } = zeroCo.minus(numberCo);
+
+    this._swap(zeroCo, numberCo);
+
+    if (deltaX) {
+      return deltaX > 0 ? "left" : "right";
+    } else {
+      return deltaY > 0 ? "up" : "down";
+    }
+  }
+
   _moveZero(targetCoordinate, avoidCoordinate) {
     const zeroCoordinate = this.getCoordinate(0);
     const pathToTarget = [zeroCoordinate].concat(

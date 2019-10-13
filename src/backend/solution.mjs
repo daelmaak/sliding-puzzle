@@ -5,6 +5,8 @@ var originalPuzzle;
 
 export function slidePuzzle(puzzleMatrix) {
   if (!originalPuzzle) originalPuzzle = puzzleMatrix;
+  // copy
+  puzzleMatrix = puzzleMatrix.map(row => row.slice());
 
   let desiredResult = getDesiredResult(puzzleMatrix);
   let puzzle = new Puzzle(puzzleMatrix, desiredResult);
